@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-// import * as fs from 'fs';
-// import * as path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
 	const provider = new ScribbleProvider(context.extensionUri);
@@ -27,9 +27,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 		this._view = webviewView;
 
 		webviewView.webview.options = {
-			// Allow scripts in the webview
 			enableScripts: false,
-
 			localResourceRoots: [
 				this._extensionUri
 			]
@@ -37,22 +35,22 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 
 		const scribbleFile = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'scribble.txt'));
 
-		// const workspaceFolders = vscode.workspace.workspaceFolders;
+		const workspaceFolders = vscode.workspace.workspaceFolders;
 
-		// if (workspaceFolders) {
-		// 	const firstWorkspaceFolder = workspaceFolders[0];
-		// 	const dotvscodeFolder = path.join(firstWorkspaceFolder.uri.fsPath, '.vscode');
-		// 	const scribbleFile = path.join(dotvscodeFolder.uri.fsPath, 'scribble.txt');
-		// } else {
-		// 	const scribbleFile = path.join(context.extensionUri, 'resource', 'scribble.txt');
-		// }
+		if (workspaceFolders) {
+			const firstWorkspaceFolder = workspaceFolders[0];
+			const dotvscodeFolder = path.join(firstWorkspaceFolder.uri.fsPath, '.vscode');
+			const scribbleFile = path.join(dotvscodeFolder, 'scribble.txt');
+		} else {
+			const scribbleFile = path.join(this._extensionUri.fsPath, 'resources', 'scribble.txt');
+		}
 
 		webviewView.webview.html = this._getScribbleArea(webviewView.webview, scribbleFile);
 	}
 
-	private _getScribbleArea(webview: vscode.Webview, filepath: vscode.Uri) {
+	private _getScribbleArea(webview: vscode.Webview, file: vscode.Uri) {
 		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'style.css'));
-		const notes = ''; // fs.readFileSync(filepath, 'utf-8');
+		const notes = fs.readFileSync(file.fsPath, 'utf-8');
 
 		return `<link href="${styleUri}" rel="stylesheet"><textarea id="scribbleArea" placeholder="Type here">${notes}</textarea>`;
 	}
