@@ -1,0 +1,61 @@
+{
+	"name": "scribble",
+	"description": "Take notes",
+	"version": "0.0.1",
+	"publisher": "lorenzgillner",
+	"private": true,
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Microsoft/vscode-extension-samples"
+	},
+	"engines": {
+		"vscode": "^1.74.0"
+	},
+	"extensionKind": [
+		"ui",
+		"workspace"
+	],
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onStartupFinished",
+		"onWebviewPanel:scribble"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"viewsContainers": {
+			"panel": [
+				{
+					"id": "scribble",
+					"title": "Scribble",
+					"icon": "./resources/icon.svg"
+				}
+			]
+		},
+		"views": {
+			"scribble": [
+				{
+					"type": "webview",
+					"id": "scribble.scribbleView",
+					"name": "Scribble"
+				}
+			]
+		},
+		"commands": []
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint \"src/**/*.ts\"",
+		"watch": "tsc -w -p ./"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.73.0",
+		"@typescript-eslint/eslint-plugin": "^5.48.2",
+		"@typescript-eslint/parser": "^5.48.2",
+		"eslint": "^8.32.0",
+		"typescript": "^4.9.5"
+	}
+}

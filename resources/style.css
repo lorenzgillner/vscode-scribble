@@ -1,0 +1,11 @@
+#scribbleArea {
+	width: 95vw;
+	height: 95vh;
+	flex: 1;
+	resize: none;
+	color: var(--vscode-input-foreground);
+	background-color: var(--vscode-input-background);
+	display: block;
+	border: none;
+	margin: 0 auto 0 0;
+}
