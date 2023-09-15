@@ -1,32 +1,25 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 
-const dotVscode = '.vscode';
-const scribbleName = 'scribble.txt';
-
-function dotVscodeExists() {
-	const workspaceFolders = vscode.workspace.workspaceFolders;
-
-	return workspaceFolders && workspaceFolders.length > 0 &&
-		fs.existsSync(vscode.Uri.joinPath(workspaceFolders[0].uri, dotVscode).fsPath);
-}
+const scribbleName = '.scribble.txt';
 
 export function activate(context: vscode.ExtensionContext) {
-	const scribbleFilePath = (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) ? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, '.vscode', 'scribble.txt') : vscode.Uri.joinPath(context.extensionUri, 'resources', scribbleName);
+	const wsFolders = vscode.workspace.workspaceFolders;
+	const scribblePath = (wsFolders && wsFolders.length > 0 && fs.existsSync(vscode.Uri.joinPath(wsFolders[0].uri, scribbleName).fsPath)) ? vscode.Uri.joinPath(wsFolders[0].uri, scribbleName) : vscode.Uri.joinPath(context.extensionUri, 'resources', 'scribble.txt');
 
-	const provider = new ScribbleProvider(context.extensionUri, scribbleFilePath);
+	const provider = new ScribbleProvider(context.extensionUri, scribblePath);
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(ScribbleProvider.viewType, provider));
-
-	// context.subscriptions.push(
-	// 	vscode.commands.registerCommand('scribble.createLocalScribble', () => {
-	// 		provider.createLocalScribble();
-	// 	}));
 	
 	context.subscriptions.push(
 		vscode.commands.registerCommand('scribble.saveScribble', () => {
 			provider.saveScribble();
+		}));
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('scribble.createScribble', () => {
+			provider.createScribble();
 		}));
 }
 
@@ -37,7 +30,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
-		private readonly _scribbleFilePath: vscode.Uri
+		private _scribblePath: vscode.Uri
 	) { }
 
 	public resolveWebviewView(
@@ -60,7 +53,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 			switch (data.type) {
 				case 'saveScribbleEvent':
 					{
-						fs.writeFile(this._scribbleFilePath.fsPath, data.value, 'utf8', (err) => {
+						fs.writeFile(this._scribblePath.fsPath, data.value, 'utf8', (err) => {
 							if (err) {
 								vscode.window.showErrorMessage("Couldn't save scribble");
 							} else {
@@ -79,21 +72,33 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 		}
 	}
 
-	// public createLocalScribble() {
-	// 	if (dotVscodeExists()) {
-	// 		const localScribblePath = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, dotVscode, scribbleName);
-	// 		vscode.workspace.fs.writeFile(localScribblePath, new Uint8Array).then(undefinedl, (reason) => {
-	// 			vscode.window.showErrorMessage(reason);
-	// 		});
-	// 	} else {
-	// 		vscode.window.showErrorMessage("Can't create scribble without a valid workspace");
-	// 	}
-	// }
+	public createScribble() {
+		const wsFolders = vscode.workspace.workspaceFolders;
+
+		if (wsFolders && wsFolders.length > 0) {
+			const scribblePath = vscode.Uri.joinPath(wsFolders[0].uri, scribbleName);
+			if (!fs.existsSync(scribblePath.fsPath)) {
+				vscode.workspace.fs.writeFile(scribblePath, new Uint8Array).then(undefined, (reason) => {
+					vscode.window.showErrorMessage(reason);
+				});
+				this._scribblePath = scribblePath;
+				if (this._view) {
+					this._view.webview.postMessage({ type: 'createScribbleCommand' });
+				}
+			} else {
+				vscode.window.showErrorMessage("Existing scribble found");
+			}
+		} else {
+			vscode.window.showErrorMessage("Can't create scribble in an empty workspace");
+		}
+	}
+
+	// TODO update on local scribble deletion
 
 	private _getScribbleArea(webview: vscode.Webview) {
 		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'style.css'));
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'scribble.js'));
-		const scribbleText = fs.readFileSync(this._scribbleFilePath.fsPath, 'utf-8'); // TODO feedback on failure
+		const scribbleText = fs.readFileSync(this._scribblePath.fsPath, 'utf-8'); // TODO feedback on failure
 
 		// TODO this
 		return `<!DOCTYPE html>

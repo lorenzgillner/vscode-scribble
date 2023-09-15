@@ -15,3 +15,5 @@ vsce package
 ```sh
 code --install-extension scribble-<version>.vsix
 ```
+
+ Don't forget to add `.scribble` to your `.gitignore`; you probably don't want your notes to end up in some public repo :^)

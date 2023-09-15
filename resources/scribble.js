@@ -19,13 +19,17 @@
                     saveScribble();
                     break;
                 }
+            case 'createScribbleCommand':
+                {
+                    scribbleArea.value = '';
+                }
         }
     });
 
     function saveScribble() {
         vscode.postMessage({
 			type: 'saveScribbleEvent',
-			value: scribbleArea.value || '' // TODO use `this` instead
+			value: scribbleArea.value // TODO use `this` instead
 		});
     }
 }());
