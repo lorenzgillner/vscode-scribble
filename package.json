@@ -1,7 +1,7 @@
 {
 	"name": "scribble",
 	"description": "Take notes",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"publisher": "lorenzgillner",
 	"private": true,
 	"license": "MIT",
@@ -30,7 +30,7 @@
 				{
 					"id": "scribble",
 					"title": "Scribble",
-					"icon": "./resources/icon.svg"
+					"icon": "$(note)"
 				}
 			]
 		},

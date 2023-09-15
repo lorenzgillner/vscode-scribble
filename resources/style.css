@@ -1,12 +1,12 @@
 #scribbleArea {
-	width: 95vw;
-	height: 94vh;
+	width: 100%;
+	height: 95vh;
 	resize: none;
 	color: var(--vscode-input-foreground);
 	background-color: var(--vscode-input-background);
 	display: block;
 	border: none;
-	margin: 0 auto 0 0;
+	margin: auto 0;
 }
 
 #scribbleArea:focus {

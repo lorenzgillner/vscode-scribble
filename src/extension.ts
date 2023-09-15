@@ -1,22 +1,29 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
-	const provider = new ScribbleProvider(context.extensionUri);
+	// if (vscode.workspace.workspaceFolders) {
+	// 	const firstWorkspaceFolder = workspaceFolders[0];
+	// 	const dotvscodeFolder = path.join(firstWorkspaceFolder.uri.fsPath, '.vscode');
+	// 	this._scribbleFile = path.join(dotvscodeFolder, 'scribble.txt');
+	// } else {
+	// 	this._scribbleFile = path.join(this._extensionUri.fsPath, 'resources', 'scribble.txt');
+	// }
+	const scribbleFilePath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'scribble.txt');
+	const provider = new ScribbleProvider(context.extensionUri, scribbleFilePath);
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(ScribbleProvider.viewType, provider));
 }
 
 class ScribbleProvider implements vscode.WebviewViewProvider {
-
 	public static readonly viewType = 'scribble.scribbleView';
 
 	private _view?: vscode.WebviewView;
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
+		private readonly _scribbleFilePath: vscode.Uri
 	) { }
 
 	public resolveWebviewView(
@@ -27,31 +34,66 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 		this._view = webviewView;
 
 		webviewView.webview.options = {
-			enableScripts: false,
+			enableScripts: true,
 			localResourceRoots: [
 				this._extensionUri
 			]
 		};
 
-		const scribbleFile = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'scribble.txt'));
+		// const scribbleFile = webviewView.webview.asWebviewUri(
+		// 	vscode.Uri.joinPath(this._extensionUri, 'resources', 'scribble.txt')
+		// );
 
-		const workspaceFolders = vscode.workspace.workspaceFolders;
+		webviewView.webview.html = this._getScribbleArea(webviewView.webview);
 
-		if (workspaceFolders) {
-			const firstWorkspaceFolder = workspaceFolders[0];
-			const dotvscodeFolder = path.join(firstWorkspaceFolder.uri.fsPath, '.vscode');
-			const scribbleFile = path.join(dotvscodeFolder, 'scribble.txt');
-		} else {
-			const scribbleFile = path.join(this._extensionUri.fsPath, 'resources', 'scribble.txt');
-		}
-
-		webviewView.webview.html = this._getScribbleArea(webviewView.webview, scribbleFile);
+		webviewView.webview.onDidReceiveMessage(data => {
+			switch (data.type) {
+				case 'saveScribbleEvent':
+					{
+						fs.writeFile(this._scribbleFilePath.fsPath, data.value, 'utf8', (err) => {
+							if (err) {
+								vscode.window.showErrorMessage("Couldn't save scribble");
+							} else {
+								vscode.window.showInformationMessage('Scribble saved!');
+							}
+						});
+						break;
+					}
+			}
+		});
 	}
 
-	private _getScribbleArea(webview: vscode.Webview, file: vscode.Uri) {
-		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'style.css'));
-		const notes = fs.readFileSync(file.fsPath, 'utf-8');
+	public saveScribble() {
+		if (this._view) {
+			this._view.webview.postMessage({ type: 'saveScribbleCommand' });
+		}
+	}
 
-		return `<link href="${styleUri}" rel="stylesheet"><textarea id="scribbleArea" placeholder="Type here">${notes}</textarea>`;
+	private _getScribbleArea(webview: vscode.Webview) {
+		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'style.css'));
+		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'scribble.js'));
+		// const scribbleText = fs.readFile(this._scribbleFilePath.fsPath, 'utf-8', (err, data) => {
+		// 	if (err) {
+		// 		vscode.window.showErrorMessage("Couldn't load scribble");
+		// 		data = '';
+        //     } else {
+		// 		vscode.window.showInformationMessage('Scribble loaded');
+        //     }
+		// });
+		const scribbleText = fs.readFileSync(this._scribbleFilePath.fsPath, 'utf-8');
+
+		// TODO this
+		return `<!DOCTYPE html>
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<link href="${styleUri}" rel="stylesheet">
+			</head>
+			<body>
+				<textarea id="scribbleArea" placeholder="Type here">${scribbleText}</textarea>
+				<script src="${scriptUri}"/>
+			</body>
+			</html>`;
 	}
 }

@@ -13,5 +13,5 @@ vsce package
 ## Install
 
 ```sh
-code --install-extension scribble-0.0.1.vsix
+code --install-extension scribble-<version>.vsix
 ```
