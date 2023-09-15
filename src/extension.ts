@@ -1,14 +1,33 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
+
+const dotVscode = '.vscode';
+const scribbleName = 'scribble.txt';
+
+function dotVscodeExists() {
+	const workspaceFolders = vscode.workspace.workspaceFolders;
+
+	return workspaceFolders && workspaceFolders.length > 0 &&
+		fs.existsSync(vscode.Uri.joinPath(workspaceFolders[0].uri, dotVscode).fsPath);
+}
 
 export function activate(context: vscode.ExtensionContext) {
-	const scribbleFilePath = (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) ? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, '.vscode', 'scribble.txt') : vscode.Uri.joinPath(context.extensionUri, 'resources', 'scribble.txt');
+	const scribbleFilePath = (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) ? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, '.vscode', 'scribble.txt') : vscode.Uri.joinPath(context.extensionUri, 'resources', scribbleName);
 
 	const provider = new ScribbleProvider(context.extensionUri, scribbleFilePath);
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(ScribbleProvider.viewType, provider));
+
+	// context.subscriptions.push(
+	// 	vscode.commands.registerCommand('scribble.createLocalScribble', () => {
+	// 		provider.createLocalScribble();
+	// 	}));
+	
+	context.subscriptions.push(
+		vscode.commands.registerCommand('scribble.saveScribble', () => {
+			provider.saveScribble();
+		}));
 }
 
 class ScribbleProvider implements vscode.WebviewViewProvider {
@@ -59,6 +78,17 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 			this._view.webview.postMessage({ type: 'saveScribbleCommand' });
 		}
 	}
+
+	// public createLocalScribble() {
+	// 	if (dotVscodeExists()) {
+	// 		const localScribblePath = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, dotVscode, scribbleName);
+	// 		vscode.workspace.fs.writeFile(localScribblePath, new Uint8Array).then(undefinedl, (reason) => {
+	// 			vscode.window.showErrorMessage(reason);
+	// 		});
+	// 	} else {
+	// 		vscode.window.showErrorMessage("Can't create scribble without a valid workspace");
+	// 	}
+	// }
 
 	private _getScribbleArea(webview: vscode.Webview) {
 		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'style.css'));
