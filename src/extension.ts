@@ -1,15 +1,10 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
-	// if (vscode.workspace.workspaceFolders) {
-	// 	const firstWorkspaceFolder = workspaceFolders[0];
-	// 	const dotvscodeFolder = path.join(firstWorkspaceFolder.uri.fsPath, '.vscode');
-	// 	this._scribbleFile = path.join(dotvscodeFolder, 'scribble.txt');
-	// } else {
-	// 	this._scribbleFile = path.join(this._extensionUri.fsPath, 'resources', 'scribble.txt');
-	// }
-	const scribbleFilePath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'scribble.txt');
+	const scribbleFilePath = (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) ? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, '.vscode', 'scribble.txt') : vscode.Uri.joinPath(context.extensionUri, 'resources', 'scribble.txt');
+
 	const provider = new ScribbleProvider(context.extensionUri, scribbleFilePath);
 
 	context.subscriptions.push(
