@@ -40,10 +40,6 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 			]
 		};
 
-		// const scribbleFile = webviewView.webview.asWebviewUri(
-		// 	vscode.Uri.joinPath(this._extensionUri, 'resources', 'scribble.txt')
-		// );
-
 		webviewView.webview.html = this._getScribbleArea(webviewView.webview);
 
 		webviewView.webview.onDidReceiveMessage(data => {
@@ -72,15 +68,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 	private _getScribbleArea(webview: vscode.Webview) {
 		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'style.css'));
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'scribble.js'));
-		// const scribbleText = fs.readFile(this._scribbleFilePath.fsPath, 'utf-8', (err, data) => {
-		// 	if (err) {
-		// 		vscode.window.showErrorMessage("Couldn't load scribble");
-		// 		data = '';
-        //     } else {
-		// 		vscode.window.showInformationMessage('Scribble loaded');
-        //     }
-		// });
-		const scribbleText = fs.readFileSync(this._scribbleFilePath.fsPath, 'utf-8');
+		const scribbleText = fs.readFileSync(this._scribbleFilePath.fsPath, 'utf-8'); // TODO feedback on failure
 
 		// TODO this
 		return `<!DOCTYPE html>
