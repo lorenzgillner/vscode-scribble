@@ -1,14 +1,16 @@
 {
 	"name": "scribble",
-	"description": "Take notes",
-	"icon": "$(note)",
+	"displayName": "ScRibBle",
+	"description": "A Geany-like scratchpad for VS Code",
+	"icon": "./resources/icon.png",
 	"version": "0.0.2",
 	"publisher": "lorenzgillner",
 	"private": true,
 	"license": "MIT",
+	"homepage": "https://github.com/lorenzgillner/vscode-scribble",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/lorenzgillner/vscode-scribble"
+		"url": "https://github.com/lorenzgillner/vscode-scribble.git"
 	},
 	"engines": {
 		"vscode": "^1.74.0"
@@ -20,11 +22,22 @@
 	"categories": [
 		"Other"
 	],
+	"keywords": [
+		"ui",
+		"scribble",
+		"scratchpad",
+		"notes"
+	],
 	"activationEvents": [
 		"onStartupFinished",
 		"onWebviewPanel:scribble"
 	],
 	"main": "./out/extension.js",
+	"capabilities": {
+		"untrustedWorkspaces": {
+			"supported": "false"
+		}
+	},
 	"contributes": {
 		"viewsContainers": {
 			"panel": [
