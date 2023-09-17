@@ -3,7 +3,7 @@
 	"displayName": "ScRibBle",
 	"description": "A Geany-like scratchpad for VS Code",
 	"icon": "./resources/icon.png",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"publisher": "lorenzgillner",
 	"private": true,
 	"license": "MIT",
@@ -11,6 +11,10 @@
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/lorenzgillner/vscode-scribble.git"
+	},
+	"galleryBanner": {
+		"color": "#FFFFFF",
+		"theme": "light"
 	},
 	"engines": {
 		"vscode": "^1.74.0"
@@ -30,7 +34,8 @@
 	],
 	"activationEvents": [
 		"onStartupFinished",
-		"onWebviewPanel:scribble"
+		"onWebviewPanel:scribble",
+		"workspaceContains:.scribble.txt"
 	],
 	"main": "./out/extension.js",
 	"capabilities": {
