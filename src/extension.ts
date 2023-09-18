@@ -110,7 +110,9 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 				<link href="${styleUri}" rel="stylesheet">
 			</head>
 			<body>
-				<textarea id="scribbleArea" placeholder="Type here">${scribbleText}</textarea>
+				<div id="scribbleWrapper">
+					<textarea id="scribbleArea" placeholder="Type here">${scribbleText}</textarea>
+				</div>
 				<script src="${scriptUri}"/>
 			</body>
 			</html>`;
