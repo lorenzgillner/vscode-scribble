@@ -2,10 +2,10 @@
 	"name": "scribble",
 	"displayName": "ScRibBle",
 	"description": "A Geany-like scratchpad for VS Code",
-	"icon": "./resources/icon.png",
+	"icon": "./icons/icon.png",
 	"version": "0.0.3",
 	"publisher": "lorenzgillner",
-	"private": true,
+	"preview": true,
 	"license": "MIT",
 	"homepage": "https://github.com/lorenzgillner/vscode-scribble",
 	"repository": {
@@ -27,10 +27,10 @@
 		"Other"
 	],
 	"keywords": [
-		"ui",
+		"panel",
 		"scribble",
 		"scratchpad",
-		"notes"
+		"note"
 	],
 	"activationEvents": [
 		"onStartupFinished",

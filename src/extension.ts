@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 
-const scribbleName = '.scribble.txt';
+const globalScribbleName = 'scribble.txt';
+const localScribbleName = `.${globalScribbleName}`;
 
 export function activate(context: vscode.ExtensionContext) {
 	const wsFolders = vscode.workspace.workspaceFolders;
-	const scribblePath = (wsFolders && wsFolders.length > 0 && fs.existsSync(vscode.Uri.joinPath(wsFolders[0].uri, scribbleName).fsPath)) ? vscode.Uri.joinPath(wsFolders[0].uri, scribbleName) : vscode.Uri.joinPath(context.extensionUri, 'resources', 'scribble.txt');
+	const scribblePath = (wsFolders && wsFolders.length > 0 && fs.existsSync(vscode.Uri.joinPath(wsFolders[0].uri, localScribbleName).fsPath)) ? vscode.Uri.joinPath(wsFolders[0].uri, localScribbleName) : vscode.Uri.joinPath(context.extensionUri, 'resources', globalScribbleName);
 
 	const provider = new ScribbleProvider(context.extensionUri, scribblePath);
 
@@ -57,7 +58,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 							if (err) {
 								vscode.window.showErrorMessage("Couldn't save scribble");
 							} else {
-								vscode.window.showInformationMessage('Scribble saved!');
+								vscode.window.showInformationMessage('Scribble saved');
 							}
 						});
 						break;
@@ -76,7 +77,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 		const wsFolders = vscode.workspace.workspaceFolders;
 
 		if (wsFolders && wsFolders.length > 0) {
-			const scribblePath = vscode.Uri.joinPath(wsFolders[0].uri, scribbleName);
+			const scribblePath = vscode.Uri.joinPath(wsFolders[0].uri, localScribbleName);
 			if (!fs.existsSync(scribblePath.fsPath)) {
 				vscode.workspace.fs.writeFile(scribblePath, new Uint8Array).then(undefined, (reason) => {
 					vscode.window.showErrorMessage(reason);
