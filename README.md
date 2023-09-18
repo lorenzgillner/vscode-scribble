@@ -8,34 +8,30 @@ This extension adds a panel that mimics the functionality of Geany's "Scribble" 
 
 ![Extension screenshot](assets/vscode_scribble.png)
 
-## Build
+## Installation
 
-To build this extension, you need the TypeScript compiler `tsc` and the "Visual Studio Code Extensions" (`vsce`) command line tool, which can be installed via `npm`:
-
-```sh
-npm install -g typescript @vscode/vsce
-```
-
-I recommend compiling the project first, to see whether you need to install some dependencies:
-
-```sh
-cd vscode-scribble
-npm run compile
-```
-
-If everything compiles, you can package the current version:
-
-```sh
-vsce package # produces scribble-<version>.vsix
-```
-
-## Install
-
-Build or download the package, then install it via "View" > "Extensions" > "Views and More Actions..." > "Install from VSCIX...", or from the command line:
+[Download](https://github.com/lorenzgillner/vscode-scribble/releases/latest) or [build](#build) the package, then install it via the extension manager ("View" > "Extensions" > "Views and More Actions..." > "Install from VSCIX...") or from the command line:
 
 ```sh
 code --install-extension scribble-<version>.vsix
 ```
+
+## Building from source
+
+Clone the source code and enter the source directory. Make sure that an *up-to-date* version of `npm` is installed, since it will take care of the remaining steps:
+
+```sh
+git clone https://github.com/lorenzgillner/vscode-scribble
+cd vscode-scribble
+npm install      # install dependencies
+npm run release  # build the VSIX package
+```
+
+## Key bindings
+
+Shortcut | Description
+--- | ---
+**[ctrl]+[s]** | Save your current scribble
 
 ## PSA
 
