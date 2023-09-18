@@ -2,8 +2,8 @@
 	"name": "scribble",
 	"displayName": "ScRibBle",
 	"description": "A Geany-like scratchpad for VS Code",
-	"icon": "./icons/icon.png",
-	"version": "0.0.3",
+	"icon": "./assets/icon.png",
+	"version": "0.0.4",
 	"publisher": "lorenzgillner",
 	"preview": true,
 	"license": "MIT",
@@ -40,7 +40,7 @@
 	"main": "./out/extension.js",
 	"capabilities": {
 		"untrustedWorkspaces": {
-			"supported": "false"
+			"supported": "limited"
 		}
 	},
 	"contributes": {

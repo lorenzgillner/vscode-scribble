@@ -1,12 +1,12 @@
 # Scribble
 
-Take notes in VS Code*, just like in the [Geany IDE](https://www.geany.org/):
+Take notes in VS Code/Codium, just like in the [Geany IDE](https://www.geany.org/):
 
-![Scribble area in the Geany IDE](screenshots/geany_scribble.png)
+![Scribble area in the Geany IDE](assets/geany_scribble.png)
 
 This extension adds a panel that mimics the functionality of Geany's "Scribble" feature:
 
-![Extension screenshot](screenshots/vscode_scribble.png)
+![Extension screenshot](assets/vscode_scribble.png)
 
 ## Build
 
