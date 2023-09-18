@@ -20,6 +20,8 @@ jobs:
           node-version: '18'
       - name: Setup Environment
         run: node -e "let pkg = require('./package.json'); console.log('PACKAGE_VERSION=' + pkg.version + '\nPACKAGE_NAME=' + pkg.name + '-' + pkg.version)" >> $GITHUB_ENV
+      - name: Install Dependencies
+        run: npm install
       - name: Install VSCE
         run: npm install -g @vscode/vsce
       - name: Package Extension
