@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
+import * as fs from 'fs'; // TODO use vscode.workspace.fs instead of fs
 
 const globalScribbleName = 'scribble.txt';
 const localScribbleName = `.${globalScribbleName}`;
