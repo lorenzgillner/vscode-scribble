@@ -8,6 +8,10 @@ This extension adds a panel that mimics the functionality of Geany's "Scribble" 
 
 ![Extension screenshot](assets/vscode_scribble.png)
 
+## Why?
+
+https://github.com/Microsoft/vscode/issues/58774
+
 ## Installation
 
 [Download](https://github.com/lorenzgillner/vscode-scribble/releases/latest) or [build](#build) the package, then install it via the extension manager ("View" > "Extensions" > "Views and More Actions..." > "Install from VSCIX...") or from the command line:
