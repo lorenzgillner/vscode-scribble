@@ -1,13 +1,28 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs'; // TODO use vscode.workspace.fs instead of fs
 
-const globalScribbleName = 'scribble.txt';
-const localScribbleName = `.${globalScribbleName}`;
+const scribbleName = 'scribble.txt';
+
+function touchScribble(uri: vscode.Uri) {
+	const scribblePath = vscode.Uri.joinPath(uri, scribbleName).fsPath;
+	if (!fs.existsSync(uri.fsPath)) {
+		fs.mkdirSync(uri.fsPath, {recursive: true});
+	}
+	fs.appendFileSync(scribblePath, '');
+}
 
 export function activate(context: vscode.ExtensionContext) {
-	const wsFolders = vscode.workspace.workspaceFolders;
-	const scribblePath = (wsFolders && wsFolders.length > 0 && fs.existsSync(vscode.Uri.joinPath(wsFolders[0].uri, localScribbleName).fsPath)) ? vscode.Uri.joinPath(wsFolders[0].uri, localScribbleName) : vscode.Uri.joinPath(context.extensionUri, 'resources', globalScribbleName);
+	const globalScribblePath = vscode.Uri.joinPath(context.globalStorageUri, scribbleName);
 
+	/* create global scribble if it doesn't exist yet */
+	fs.existsSync(globalScribblePath.fsPath) || touchScribble(context.globalStorageUri);
+
+	/* try to open local scribble, fallback to global scribble */
+	const wsFolders = vscode.workspace.workspaceFolders;
+	const localScribblePath = vscode.Uri.joinPath(wsFolders[0].uri, '.vscode', scribbleName);
+	const scribblePath = (wsFolders && wsFolders.length > 0 && fs.existsSync(localScribblePath.fsPath)) ? localScribblePath : globalScribblePath;
+
+	/* create new scribble window */
 	const provider = new ScribbleProvider(context.extensionUri, scribblePath);
 
 	context.subscriptions.push(
@@ -20,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('scribble.createScribble', () => {
-			provider.createScribble();
+			provider.createScribble(context);
 		}));
 }
 
@@ -73,21 +88,19 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 		}
 	}
 
-	public createScribble() {
-		const wsFolders = vscode.workspace.workspaceFolders;
+	// TODO this without context
+	public createScribble(context: vscode.ExtensionContext) {
+		if (context.storageUri) {
+			const localScribblePath = vscode.Uri.joinPath(context.storageUri, scribbleName);
 
-		if (wsFolders && wsFolders.length > 0) {
-			const scribblePath = vscode.Uri.joinPath(wsFolders[0].uri, localScribbleName);
-			if (!fs.existsSync(scribblePath.fsPath)) {
-				vscode.workspace.fs.writeFile(scribblePath, new Uint8Array).then(undefined, (reason) => {
-					vscode.window.showErrorMessage(reason);
-				});
-				this._scribblePath = scribblePath;
+			if (fs.existsSync(localScribblePath.fsPath)) {
+				vscode.window.showErrorMessage("Existing scribble found");
+			} else {
+				touchScribble(localScribblePath);
+				this._scribblePath = localScribblePath;
 				if (this._view) {
 					this._view.webview.postMessage({ type: 'createScribbleCommand' });
 				}
-			} else {
-				vscode.window.showErrorMessage("Existing scribble found");
 			}
 		} else {
 			vscode.window.showErrorMessage("Can't create scribble in an empty workspace");
