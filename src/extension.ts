@@ -7,10 +7,10 @@ const scribbleName = 'scribble.txt';
 const squid = '🐙';
 
 /* ... because vscode.workspace.workspaceFolders is too long */
-const wsf = vscode.workspace.workspaceFolders || [];
+const wsf = vscode.workspace.workspaceFolders;
 
 /* uses the first workspace by default for now; TODO support for multi-root workspaces */
-const localScribblePath = vscode.Uri.joinPath(wsf[0].uri, '.vscode', scribbleName);
+const localScribblePath = (wsf && wsf.length > 0) ? vscode.Uri.joinPath(wsf[0].uri, '.vscode', scribbleName) : undefined;
 
 function touchScribble(uri: vscode.Uri) {
 	const scribblePath = vscode.Uri.joinPath(uri, scribbleName).fsPath;
@@ -28,7 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
 	fs.existsSync(globalScribblePath.fsPath) || touchScribble(context.globalStorageUri);
 
 	/* try to open local scribble, otherwise use global scribble */
-	const scribblePath = (wsf && wsf.length > 0 && fs.existsSync(localScribblePath.fsPath)) ? localScribblePath : globalScribblePath;
+	const scribblePath = (localScribblePath && fs.existsSync(localScribblePath.fsPath)) ? localScribblePath : globalScribblePath;
 
 	/* create new scribble instance */
 	const provider = new ScribbleProvider(context.extensionUri, scribblePath);
@@ -125,7 +125,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 	}
 
 	public createScribble() {
-		if (wsf) {
+		if (localScribblePath) {
 			if (fs.existsSync(localScribblePath.fsPath)) {
 				vscode.window.showErrorMessage("Existing scribble found");
 			} else {
