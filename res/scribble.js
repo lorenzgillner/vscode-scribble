@@ -9,21 +9,25 @@
 		}
     });
 
+    scribbleArea.addEventListener('focusout', () => {
+        sendScribble();
+    });
+
     // Handle messages sent from the extension to the webview
     window.addEventListener('message', event => {
         const message = event.data;
         switch (message.type) {
-            case 'saveScribbleCommand':
+            case 'saveScribble':
                 {
                     saveScribble();
                     break;
                 }
-            case 'setScribbleCommand':
+            case 'setScribble':
                 {
                     scribbleArea.value = message.value;
                     break;
                 }
-            case 'getScribbleCommand':
+            case 'getScribble':
                 {
                     sendScribble();
                     break;
@@ -33,14 +37,14 @@
 
     function saveScribble() {
         vscode.postMessage({
-			type: 'saveScribbleEvent',
+			type: 'saveScribble',
 			data: scribbleArea.value
 		});
     }
 
     function sendScribble() {
         vscode.postMessage({
-            type: 'getScribbleEvent',
+            type: 'sendScribble',
             data: scribbleArea.value
         });
     }

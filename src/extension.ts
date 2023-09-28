@@ -17,16 +17,15 @@ function touchScribble(uri: vscode.Uri) {
 	if (!fs.existsSync(uri.fsPath)) {
 		fs.mkdirSync(uri.fsPath, {recursive: true});
 	}
-	fs.appendFileSync(scribblePath, '');
+	fs.appendFileSync(scribblePath, squid);
 }
 
 export function activate(context: vscode.ExtensionContext) {
 	/* default location in global storage (somewhere in your $HOME) */
 	const globalScribblePath = vscode.Uri.joinPath(context.globalStorageUri, scribbleName);
 
-	// XXX this might not be necessary
-	// /* create global scribble if it doesn't exist yet */
-	// fs.existsSync(globalScribblePath.fsPath) || touchScribble(context.globalStorageUri);
+	/* create global scribble if it doesn't exist yet */
+	fs.existsSync(globalScribblePath.fsPath) || touchScribble(context.globalStorageUri);
 
 	/* try to open local scribble, otherwise use global scribble */
 	const scribblePath = (wsf && wsf.length > 0 && fs.existsSync(localScribblePath.fsPath)) ? localScribblePath : globalScribblePath;
@@ -39,12 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	context.subscriptions.push(
 		vscode.commands.registerCommand('scribble.saveScribble', () => {
-			provider.callScribble('saveScribbleCommand');
-		}));
-	
-	context.subscriptions.push(
-		vscode.commands.registerCommand('scribble.getScribble', () => {
-			provider.callScribble('getScribbleCommand');
+			provider.saveScribble();
 		}));
 
 	context.subscriptions.push(
@@ -57,12 +51,14 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 	public static readonly viewType = 'scribble.scribbleView';
 
 	private _view?: vscode.WebviewView;
-	private _text?: string;
+	private _text: string;
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
 		private _scribblePath: vscode.Uri
-	) { }
+	) {
+		this._text = fs.readFileSync(this._scribblePath.fsPath, 'utf-8');
+	}
 
 	public resolveWebviewView(
 		webviewView: vscode.WebviewView,
@@ -82,10 +78,10 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 
 		webviewView.webview.onDidReceiveMessage(event => {
 			switch (event.type) {
-				case 'saveScribbleEvent':
+				case 'saveScribble':
 					{
 						this._text = event.data;
-						fs.writeFile(this._scribblePath.fsPath, event.data, 'utf8', (err) => {
+						fs.writeFile(this._scribblePath.fsPath, this._text, 'utf8', (err) => {
 							if (err) {
 								vscode.window.showErrorMessage("Couldn't save scribble");
 							} else {
@@ -94,30 +90,38 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 						});
 						break;
 					}
-				case 'getScribbleEvent':
+				case 'sendScribble':
 					{
 						this._text = event.data;
-						vscode.window.showInformationMessage(this._text || '');
 					}
 			}
 		});
 
-		// XXX what's going on here?
 		webviewView.onDidChangeVisibility(() => {
-			this.callScribble('getScribbleCommand');
-			this.callScribble('setScribbleCommand', this._text);
+			this.setScribble(this._text);
 		});
 
 		webviewView.onDidDispose(() => {
-			this.callScribble('getScribbleCommand');
-			this.callScribble('setScribbleCommand', this._text);
+			this.setScribble(this._text);
 		});
 	}
 
-	public callScribble(cmd: string, arg?: string) {
+	private _callScribble(cmd: string, arg?: string) {
 		if (this._view) {
 			this._view.webview.postMessage({ type: cmd, value: arg });
 		}
+	}
+
+	public getScribble() {
+		this._callScribble('getScribble');
+	}
+
+	public setScribble(arg: string) {
+		this._callScribble('setScribble', arg);
+	}
+
+	public saveScribble() {
+		this._callScribble('saveScribble');
 	}
 
 	public createScribble() {
@@ -129,7 +133,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 				if (this._view) {
 					this._scribblePath = localScribblePath;
 					this._text = squid;
-					this.callScribble('setScribbleCommand', this._text);
+					this._callScribble('setScribble', this._text);
 				}
 			}
 		} else {
@@ -137,14 +141,10 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 		}
 	}
 
-	// TODO update on local scribble deletion
-
 	private _getScribbleArea(webview: vscode.Webview) {
 		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'style.css'));
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'scribble.js'));
-		this._text = fs.readFileSync(this._scribblePath.fsPath, 'utf-8'); // TODO feedback on failure
 
-		// TODO this
 		return `<!DOCTYPE html>
 			<html lang="en">
 			<head>
