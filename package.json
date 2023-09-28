@@ -63,12 +63,12 @@
 		},
 		"commands": [
 			{
-				"command": "scribble.saveScribble",
+				"command": "scribble.save",
 				"category": "Scribble",
 				"title": "Save scribble"
 			},
 			{
-				"command": "scribble.createScribble",
+				"command": "scribble.create",
 				"category": "Scribble",
 				"title": "Create new scribble for current workspace"
 			}

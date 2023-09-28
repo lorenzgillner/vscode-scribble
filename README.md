@@ -31,12 +31,6 @@ npm install      # install dependencies
 npm run release  # build the VSIX package
 ```
 
-## Key bindings
-
-Shortcut | Description
---- | ---
-**[ctrl]+[s]** | Save your current scribble
-
 ## PSA
 
-Don't forget to add `.scribble.txt` to your `.gitignore` if you are using a local scribble file; you probably don't want your notes to end up in some public repo 🫠
+Don't forget to add `scribble.txt` to your `.gitignore` if you are using a local scribble file; you probably don't want your notes to end up in some public repo 🫠

@@ -10,40 +10,50 @@ const squid = '🐙';
 const wsf = vscode.workspace.workspaceFolders;
 
 /* uses the first workspace by default for now; TODO support for multi-root workspaces */
-const localScribblePath = (wsf && wsf.length > 0) ? vscode.Uri.joinPath(wsf[0].uri, '.vscode', scribbleName) : undefined;
+const localScribbleFolder = (wsf && wsf.length > 0) ? vscode.Uri.joinPath(wsf[0].uri, '.vscode') : undefined;
 
 function touchScribble(uri: vscode.Uri) {
-	const scribblePath = vscode.Uri.joinPath(uri, scribbleName).fsPath;
+	const scribblePath = vscode.Uri.joinPath(uri, scribbleName);
 	if (!fs.existsSync(uri.fsPath)) {
-		fs.mkdirSync(uri.fsPath, {recursive: true});
+		fs.mkdirSync(uri.fsPath, { recursive: true });
 	}
-	fs.appendFileSync(scribblePath, squid);
+	fs.appendFileSync(scribblePath.fsPath, squid);
+	return scribblePath;
+}
+
+function hasScribble(uri: vscode.Uri) {
+	return fs.existsSync(vscode.Uri.joinPath(uri, scribbleName).fsPath);
+}
+
+function readScribble(uri: vscode.Uri) {
+	return fs.readFileSync(uri.fsPath, 'utf-8');
 }
 
 export function activate(context: vscode.ExtensionContext) {
 	/* default location in global storage (somewhere in your $HOME) */
-	const globalScribblePath = vscode.Uri.joinPath(context.globalStorageUri, scribbleName);
+	const globalScribbleFolder = context.globalStorageUri
+	const globalScribblePath = vscode.Uri.joinPath(globalScribbleFolder, scribbleName);
 
 	/* create global scribble if it doesn't exist yet */
-	fs.existsSync(globalScribblePath.fsPath) || touchScribble(context.globalStorageUri);
+	fs.existsSync(globalScribblePath.fsPath) || touchScribble(globalScribbleFolder);
 
 	/* try to open local scribble, otherwise use global scribble */
-	const scribblePath = (localScribblePath && fs.existsSync(localScribblePath.fsPath)) ? localScribblePath : globalScribblePath;
+	const scribblePath = (localScribbleFolder && hasScribble(localScribbleFolder)) ? vscode.Uri.joinPath(localScribbleFolder, scribbleName) : globalScribblePath;
 
 	/* create new scribble instance */
 	const provider = new ScribbleProvider(context.extensionUri, scribblePath);
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(ScribbleProvider.viewType, provider));
-	
+
 	context.subscriptions.push(
-		vscode.commands.registerCommand('scribble.saveScribble', () => {
-			provider.saveScribble();
+		vscode.commands.registerCommand('scribble.save', () => {
+			provider.save();
 		}));
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('scribble.createScribble', () => {
-			provider.createScribble();
+		vscode.commands.registerCommand('scribble.create', () => {
+			provider.create();
 		}));
 }
 
@@ -57,7 +67,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 		private readonly _extensionUri: vscode.Uri,
 		private _scribblePath: vscode.Uri
 	) {
-		this._text = fs.readFileSync(this._scribblePath.fsPath, 'utf-8');
+		this._text = readScribble(this._scribblePath);
 	}
 
 	public resolveWebviewView(
@@ -78,21 +88,10 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 
 		webviewView.webview.onDidReceiveMessage(event => {
 			switch (event.type) {
-				case 'saveScribble':
+				case 'get':
 					{
 						this._text = event.data;
-						fs.writeFile(this._scribblePath.fsPath, this._text, 'utf8', (err) => {
-							if (err) {
-								vscode.window.showErrorMessage("Couldn't save scribble");
-							} else {
-								vscode.window.showInformationMessage('Scribble saved');
-							}
-						});
 						break;
-					}
-				case 'sendScribble':
-					{
-						this._text = event.data;
 					}
 			}
 		});
@@ -106,38 +105,45 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 		});
 	}
 
-	private _callScribble(cmd: string, arg?: string) {
-		if (this._view) {
-			this._view.webview.postMessage({ type: cmd, value: arg });
-		}
-	}
-
 	public getScribble() {
-		this._callScribble('getScribble');
+		this._callScribble('get');
 	}
 
 	public setScribble(arg: string) {
-		this._callScribble('setScribble', arg);
+		this._callScribble('set', arg);
 	}
 
-	public saveScribble() {
-		this._callScribble('saveScribble');
+	public save() {
+		this._callScribble('get');
+		fs.writeFile(this._scribblePath.fsPath, this._text, 'utf8', (err) => {
+			if (err) {
+				vscode.window.showErrorMessage(`Couldn't save scribble: ${err.message}`);
+			} else {
+				vscode.window.showInformationMessage('Scribble saved');
+			}
+		});
 	}
 
-	public createScribble() {
-		if (localScribblePath) {
-			if (fs.existsSync(localScribblePath.fsPath)) {
+	public create() {
+		if (localScribbleFolder) {
+			if (hasScribble(localScribbleFolder)) {
 				vscode.window.showErrorMessage("Existing scribble found");
 			} else {
-				touchScribble(localScribblePath);
+				const newScribblePath = touchScribble(localScribbleFolder);
 				if (this._view) {
-					this._scribblePath = localScribblePath;
+					this._scribblePath = newScribblePath;
 					this._text = squid;
-					this._callScribble('setScribble', this._text);
+					this.setScribble(this._text);
 				}
 			}
 		} else {
 			vscode.window.showErrorMessage("Can't create scribble in an empty workspace");
+		}
+	}
+
+	private _callScribble(cmd: string, arg?: string) {
+		if (this._view) {
+			this._view.webview.postMessage({ type: cmd, value: arg });
 		}
 	}
 

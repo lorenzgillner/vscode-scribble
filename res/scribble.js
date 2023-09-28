@@ -1,50 +1,32 @@
 (function () {
     // eslint-disable-next-line no-undef
     const vscode = acquireVsCodeApi();
-	const scribbleArea = document.getElementById('scribbleArea');
+    const scribbleArea = document.getElementById('scribbleArea');
 
-	scribbleArea.addEventListener('keydown', event => {
-		if (event.ctrlKey && event.key === 's') {
-			saveScribble();
-		}
+    scribbleArea.addEventListener('input', () => {
+        getScribbleContent();
     });
 
-    scribbleArea.addEventListener('focusout', () => {
-        sendScribble();
-    });
-
-    // Handle messages sent from the extension to the webview
+    // Handle messages sent from the extension to this webview
     window.addEventListener('message', event => {
         const message = event.data;
         switch (message.type) {
-            case 'saveScribble':
-                {
-                    saveScribble();
-                    break;
-                }
-            case 'setScribble':
+            case 'set':
                 {
                     scribbleArea.value = message.value;
                     break;
                 }
-            case 'getScribble':
+            case 'get':
                 {
-                    sendScribble();
+                    getScribbleContent();
                     break;
                 }
         }
     });
 
-    function saveScribble() {
+    function getScribbleContent() {
         vscode.postMessage({
-			type: 'saveScribble',
-			data: scribbleArea.value
-		});
-    }
-
-    function sendScribble() {
-        vscode.postMessage({
-            type: 'sendScribble',
+            type: 'get',
             data: scribbleArea.value
         });
     }
