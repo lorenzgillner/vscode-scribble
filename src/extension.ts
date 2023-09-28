@@ -1,7 +1,16 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs'; // TODO use vscode.workspace.fs instead of fs
 
+/* default scribble file name */
 const scribbleName = 'scribble.txt';
+
+const squid = '🐙';
+
+/* ... because vscode.workspace.workspaceFolders is too long */
+const wsf = vscode.workspace.workspaceFolders || [];
+
+/* uses the first workspace by default for now; TODO support for multi-root workspaces */
+const localScribblePath = vscode.Uri.joinPath(wsf[0].uri, '.vscode', scribbleName);
 
 function touchScribble(uri: vscode.Uri) {
 	const scribblePath = vscode.Uri.joinPath(uri, scribbleName).fsPath;
@@ -12,17 +21,17 @@ function touchScribble(uri: vscode.Uri) {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+	/* default location in global storage (somewhere in your $HOME) */
 	const globalScribblePath = vscode.Uri.joinPath(context.globalStorageUri, scribbleName);
 
-	/* create global scribble if it doesn't exist yet */
-	fs.existsSync(globalScribblePath.fsPath) || touchScribble(context.globalStorageUri);
+	// XXX this might not be necessary
+	// /* create global scribble if it doesn't exist yet */
+	// fs.existsSync(globalScribblePath.fsPath) || touchScribble(context.globalStorageUri);
 
-	/* try to open local scribble, fallback to global scribble */
-	const wsFolders = vscode.workspace.workspaceFolders;
-	const localScribblePath = vscode.Uri.joinPath(wsFolders[0].uri, '.vscode', scribbleName);
-	const scribblePath = (wsFolders && wsFolders.length > 0 && fs.existsSync(localScribblePath.fsPath)) ? localScribblePath : globalScribblePath;
+	/* try to open local scribble, otherwise use global scribble */
+	const scribblePath = (wsf && wsf.length > 0 && fs.existsSync(localScribblePath.fsPath)) ? localScribblePath : globalScribblePath;
 
-	/* create new scribble window */
+	/* create new scribble instance */
 	const provider = new ScribbleProvider(context.extensionUri, scribblePath);
 
 	context.subscriptions.push(
@@ -30,12 +39,17 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	context.subscriptions.push(
 		vscode.commands.registerCommand('scribble.saveScribble', () => {
-			provider.saveScribble();
+			provider.callScribble('saveScribbleCommand');
+		}));
+	
+	context.subscriptions.push(
+		vscode.commands.registerCommand('scribble.getScribble', () => {
+			provider.callScribble('getScribbleCommand');
 		}));
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('scribble.createScribble', () => {
-			provider.createScribble(context);
+			provider.createScribble();
 		}));
 }
 
@@ -43,6 +57,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 	public static readonly viewType = 'scribble.scribbleView';
 
 	private _view?: vscode.WebviewView;
+	private _text?: string;
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
@@ -65,11 +80,12 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 
 		webviewView.webview.html = this._getScribbleArea(webviewView.webview);
 
-		webviewView.webview.onDidReceiveMessage(data => {
-			switch (data.type) {
+		webviewView.webview.onDidReceiveMessage(event => {
+			switch (event.type) {
 				case 'saveScribbleEvent':
 					{
-						fs.writeFile(this._scribblePath.fsPath, data.value, 'utf8', (err) => {
+						this._text = event.data;
+						fs.writeFile(this._scribblePath.fsPath, event.data, 'utf8', (err) => {
 							if (err) {
 								vscode.window.showErrorMessage("Couldn't save scribble");
 							} else {
@@ -78,28 +94,42 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 						});
 						break;
 					}
+				case 'getScribbleEvent':
+					{
+						this._text = event.data;
+						vscode.window.showInformationMessage(this._text || '');
+					}
 			}
+		});
+
+		// XXX what's going on here?
+		webviewView.onDidChangeVisibility(() => {
+			this.callScribble('getScribbleCommand');
+			this.callScribble('setScribbleCommand', this._text);
+		});
+
+		webviewView.onDidDispose(() => {
+			this.callScribble('getScribbleCommand');
+			this.callScribble('setScribbleCommand', this._text);
 		});
 	}
 
-	public saveScribble() {
+	public callScribble(cmd: string, arg?: string) {
 		if (this._view) {
-			this._view.webview.postMessage({ type: 'saveScribbleCommand' });
+			this._view.webview.postMessage({ type: cmd, value: arg });
 		}
 	}
 
-	// TODO this without context
-	public createScribble(context: vscode.ExtensionContext) {
-		if (context.storageUri) {
-			const localScribblePath = vscode.Uri.joinPath(context.storageUri, scribbleName);
-
+	public createScribble() {
+		if (wsf) {
 			if (fs.existsSync(localScribblePath.fsPath)) {
 				vscode.window.showErrorMessage("Existing scribble found");
 			} else {
 				touchScribble(localScribblePath);
-				this._scribblePath = localScribblePath;
 				if (this._view) {
-					this._view.webview.postMessage({ type: 'createScribbleCommand' });
+					this._scribblePath = localScribblePath;
+					this._text = squid;
+					this.callScribble('setScribbleCommand', this._text);
 				}
 			}
 		} else {
@@ -110,9 +140,9 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 	// TODO update on local scribble deletion
 
 	private _getScribbleArea(webview: vscode.Webview) {
-		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'style.css'));
-		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'scribble.js'));
-		const scribbleText = fs.readFileSync(this._scribblePath.fsPath, 'utf-8'); // TODO feedback on failure
+		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'style.css'));
+		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'scribble.js'));
+		this._text = fs.readFileSync(this._scribblePath.fsPath, 'utf-8'); // TODO feedback on failure
 
 		// TODO this
 		return `<!DOCTYPE html>
@@ -124,7 +154,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 			</head>
 			<body>
 				<div id="scribbleWrapper">
-					<textarea id="scribbleArea" placeholder="Type here">${scribbleText}</textarea>
+					<textarea id="scribbleArea" placeholder="Type here">${this._text}</textarea>
 				</div>
 				<script src="${scriptUri}"/>
 			</body>

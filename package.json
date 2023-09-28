@@ -35,11 +35,7 @@
 		"scratchpad",
 		"note"
 	],
-	"activationEvents": [
-		"onStartupFinished",
-		"onWebviewPanel:scribble",
-		"workspaceContains:.scribble.txt"
-	],
+	"activationEvents": [],
 	"main": "./out/extension.js",
 	"capabilities": {
 		"untrustedWorkspaces": {

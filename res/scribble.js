@@ -1,11 +1,10 @@
-//@ts-check
-
 (function () {
+    // eslint-disable-next-line no-undef
     const vscode = acquireVsCodeApi();
 	const scribbleArea = document.getElementById('scribbleArea');
 
-	scribbleArea.addEventListener('keydown', e => {
-		if (e.ctrlKey && e.key === 's') {
+	scribbleArea.addEventListener('keydown', event => {
+		if (event.ctrlKey && event.key === 's') {
 			saveScribble();
 		}
     });
@@ -19,9 +18,15 @@
                     saveScribble();
                     break;
                 }
-            case 'createScribbleCommand':
+            case 'setScribbleCommand':
                 {
-                    scribbleArea.value = '';
+                    scribbleArea.value = message.value;
+                    break;
+                }
+            case 'getScribbleCommand':
+                {
+                    sendScribble();
+                    break;
                 }
         }
     });
@@ -29,7 +34,14 @@
     function saveScribble() {
         vscode.postMessage({
 			type: 'saveScribbleEvent',
-			value: scribbleArea.value // TODO use `this` instead
+			data: scribbleArea.value
 		});
+    }
+
+    function sendScribble() {
+        vscode.postMessage({
+            type: 'getScribbleEvent',
+            data: scribbleArea.value
+        });
     }
 }());
