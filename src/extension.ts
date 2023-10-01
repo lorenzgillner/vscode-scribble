@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs'; // TODO use vscode.workspace.fs instead of fs
+import * as fs from 'fs';
 
 /* default scribble file name */
 const scribbleName = 'scribble.txt';
 
+/* placeholder text */
 const squid = '🐙';
 
 /* ... because vscode.workspace.workspaceFolders is too long */
@@ -12,6 +13,7 @@ const wsf = vscode.workspace.workspaceFolders;
 /* uses the first workspace by default for now; TODO support for multi-root workspaces */
 const localScribbleFolder = (wsf && wsf.length > 0) ? vscode.Uri.joinPath(wsf[0].uri, '.vscode') : undefined;
 
+/* XXX When working on a remote machine, this path will be created in the local file tree! */
 function touchScribble(uri: vscode.Uri) {
 	const scribblePath = vscode.Uri.joinPath(uri, scribbleName);
 	if (!fs.existsSync(uri.fsPath)) {
@@ -147,7 +149,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 		}
 	}
 
-	private _getScribbleArea(webview: vscode.Webview) {
+	private _getScribbleArea(webview: vscode.Webview): string {
 		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'style.css'));
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'scribble.js'));
 
