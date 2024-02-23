@@ -35,7 +35,7 @@
 		"scratchpad",
 		"note"
 	],
-	"activationEvents": [],
+	"activationEvents": ["onStartupFinished"],
 	"main": "./out/extension.js",
 	"capabilities": {
 		"untrustedWorkspaces": {
@@ -65,12 +65,12 @@
 			{
 				"command": "scribble.save",
 				"category": "Scribble",
-				"title": "Save scribble"
+				"title": "Save scratchpad"
 			},
 			{
 				"command": "scribble.create",
 				"category": "Scribble",
-				"title": "Create new scribble for current workspace"
+				"title": "Create local scratchpad"
 			}
 		]
 	},

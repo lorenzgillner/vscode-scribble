@@ -2,9 +2,9 @@
 
 Take notes in VS Code/Codium, just like in the [Geany IDE](https://www.geany.org/):
 
-![Scribble area in the Geany IDE](assets/geany_scribble.png)
+!["Scribble" area in the Geany IDE](assets/geany_scribble.png)
 
-This extension adds a panel that mimics the functionality of Geany's "Scribble" feature:
+This extension adds a (bottom) panel to the VS Code UI that mimics the functionality of Geany's "Scribble" feature:
 
 ![Extension screenshot](assets/vscode_scribble.png)
 
@@ -30,6 +30,15 @@ cd vscode-scribble
 npm install      # install dependencies
 npm run release  # build the VSIX package
 ```
+
+## Commands
+
+Currently, the plugin exposes the following commands:
+
+Command | Description
+--- | ---
+`Save scratchpad` | Save scribble contents to disk; prioritizes local files
+`Create local scratchpad` | Touch a new scribble file in the current workspace (`.vscode/scribble.txt`)
 
 ## PSA
 
