@@ -33,7 +33,8 @@
 		"panel",
 		"scribble",
 		"scratchpad",
-		"note"
+		"note",
+		"geany"
 	],
 	"activationEvents": ["onStartupFinished"],
 	"main": "./out/extension.js",
@@ -65,12 +66,7 @@
 			{
 				"command": "scribble.save",
 				"category": "Scribble",
-				"title": "Save scratchpad"
-			},
-			{
-				"command": "scribble.create",
-				"category": "Scribble",
-				"title": "Create local scratchpad"
+				"title": "Save scribble"
 			}
 		]
 	},

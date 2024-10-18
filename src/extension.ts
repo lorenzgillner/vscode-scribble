@@ -1,91 +1,66 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 
-/* default scratchpad file name */
-const scratchpadName = 'scribble.txt';
+/* default scribble file name */
+const scribbleName = 'scribble.txt';
 
 /* placeholder text */
 const squid = '🐙';
-
-/* undefined if no folder is open */
-const wsf = vscode.workspace.workspaceFolders;
-
-/* uses the first workspace by default (for now); TODO support multi-root workspaces? */
-const dotVscodeDir = (wsf && wsf.length > 0) ? vscode.Uri.joinPath(wsf[0].uri, '.vscode') : undefined;
 
 /* encoder for writing text files */
 const enc = new TextEncoder();
 
 /* XXX When working on a remote machine, this path will be created in the local file tree! */
-function touchScratchpad(uri: vscode.Uri) {
-	const scratchpadPath = vscode.Uri.joinPath(uri, scratchpadName);
-	vscode.workspace.fs.stat(uri).then(undefined, (reason) => {
+function touchScribble(uri: vscode.Uri) {
+	const scribblePath = vscode.Uri.joinPath(uri, scribbleName);
+	vscode.workspace.fs.stat(uri).then(undefined, () => {
 		vscode.workspace.fs.createDirectory(uri);
 	});
 	vscode.workspace.fs.writeFile(uri, enc.encode(squid));
-	return scratchpadPath;
+	return scribblePath;
 }
 
-function hasScratchpad(uri: vscode.Uri) {
-	/* can we do better than that? */
-	try {
-		vscode.workspace.fs.stat(vscode.Uri.joinPath(uri, scratchpadName));
-		return true;
-	} catch {
-		return false;
-	}
-}
-
-function readScratchpad(uri: vscode.Uri) {
-	return fs.readFileSync(uri.fsPath, 'utf-8');	
+function readScribble(uri: vscode.Uri) {
+	return fs.readFileSync(uri.fsPath, 'utf-8');
 }
 
 export function activate(context: vscode.ExtensionContext) {
-	/* default location in global storage (somewhere in your $HOME) */
+	/* default location in global extension storage (somewhere in your $HOME directory) */
 	const globalPluginDir = context.globalStorageUri;
-	const globalScratchpadPath = vscode.Uri.joinPath(globalPluginDir, scratchpadName);
+	const scribblePath = vscode.Uri.joinPath(globalPluginDir, scribbleName);
 	
-	/* create global scratchpad file if it doesn't exist yet */
-	fs.existsSync(globalScratchpadPath.fsPath) || touchScratchpad(globalPluginDir);
+	/* create global scribble file if it doesn't exist yet */
+	fs.existsSync(scribblePath.fsPath) || touchScribble(globalPluginDir);
 
-	/* try to open local scratchpad, otherwise use global scratchpad */
-	const scratchpadPath = (dotVscodeDir && hasScratchpad(dotVscodeDir)) ? vscode.Uri.joinPath(dotVscodeDir, scratchpadName) : globalScratchpadPath;
+	/* create new scribble instance */
+	const provider = new ScribbleProvider(context.extensionUri, scribblePath);
 
-	/* create new scratchpad instance */
-	const provider = new ScratchpadProvider(context.extensionUri, scratchpadPath);
+	/* register extension and its commands */
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(ScribbleProvider.viewType, provider));
 
 	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider(ScratchpadProvider.viewType, provider));
-
-	context.subscriptions.push(
-		vscode.commands.registerCommand('scratchpad.save', () => {
+		vscode.commands.registerCommand('scribble.save', () => {
 			provider.save();
-		}));
-
-	context.subscriptions.push(
-		vscode.commands.registerCommand('scratchpad.create', () => {
-			provider.create();
 		}));
 }
 
-class ScratchpadProvider implements vscode.WebviewViewProvider {
-	public static readonly viewType = 'scratchpad.scratchpadView';
+class ScribbleProvider implements vscode.WebviewViewProvider {
+	public static readonly viewType = 'scribble.scribbleView';
 
 	private _view?: vscode.WebviewView;
 	private _text: string;
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
-		private _scratchpadPath: vscode.Uri
+		private _scribblePath: vscode.Uri
 	) {
-		this._text = readScratchpad(this._scratchpadPath);
-		// vscode.window.showInformationMessage(this._scratchpadPath.toString());
-		// vscode.window.showInformationMessage(this._text);
+		this._text = readScribble(this._scribblePath);
 	}
 
 	public resolveWebviewView(
 		webviewView: vscode.WebviewView,
-		context: vscode.WebviewViewResolveContext,
+		_context: vscode.WebviewViewResolveContext,
 		_token: vscode.CancellationToken,
 	) {
 		this._view = webviewView;
@@ -97,9 +72,9 @@ class ScratchpadProvider implements vscode.WebviewViewProvider {
 			]
 		};
 
-		webviewView.webview.html = this._getScratchpadArea(webviewView.webview);
+		webviewView.webview.html = this._getScribbleArea(webviewView.webview);
 
-		webviewView.webview.onDidReceiveMessage(event => {
+		webviewView.webview.onDidReceiveMessage((event: { type: string; data: string; }) => {
 			switch (event.type) {
 				case 'get':
 					{
@@ -110,58 +85,41 @@ class ScratchpadProvider implements vscode.WebviewViewProvider {
 		});
 
 		webviewView.onDidChangeVisibility(() => {
-			this.setScratchpad(this._text);
+			this.setScribble(this._text);
 		});
 
 		webviewView.onDidDispose(() => {
-			this.setScratchpad(this._text);
+			this.setScribble(this._text);
 		});
 	}
 
-	public getScratchpad() {
-		this._callScratchpad('get');
+	public getScribble() {
+		this._callScribble('get');
 	}
 
-	public setScratchpad(arg: string) {
-		this._callScratchpad('set', arg);
+	public setScribble(arg: string) {
+		this._callScribble('set', arg);
 	}
 
 	public save() {
-		this._callScratchpad('get');
-		vscode.workspace.fs.writeFile(this._scratchpadPath, enc.encode(this._text)).then(() => {
-			vscode.window.showInformationMessage('Scratchpad saved');
+		this._callScribble('get');
+		vscode.workspace.fs.writeFile(this._scribblePath, enc.encode(this._text)).then(() => {
+			vscode.window.showInformationMessage('Scribble saved');
 		},
 			(reason) => {
-				vscode.window.showErrorMessage(`Couldn't save scratchpad: ${reason}`);
+				vscode.window.showErrorMessage(`Couldn't save scribble: ${reason}`);
 			});
 	}
 
-	public create() {
-		if (dotVscodeDir) {
-			if (hasScratchpad(dotVscodeDir)) {
-				vscode.window.showErrorMessage("Existing scratchpad found");
-			} else {
-				const newScratchpadPath = touchScratchpad(dotVscodeDir);
-				if (this._view) {
-					this._scratchpadPath = newScratchpadPath;
-					this._text = squid;
-					this.setScratchpad(this._text);
-				}
-			}
-		} else {
-			vscode.window.showErrorMessage("Can't create scratchpad in an empty workspace");
-		}
-	}
-
-	private _callScratchpad(cmd: string, arg?: string) {
+	private _callScribble(cmd: string, arg?: string) {
 		if (this._view) {
 			this._view.webview.postMessage({ type: cmd, value: arg });
 		}
 	}
 
-	private _getScratchpadArea(webview: vscode.Webview): string {
+	private _getScribbleArea(webview: vscode.Webview): string {
 		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'style.css'));
-		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'scratchpad.js'));
+		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'scribble.js'));
 
 		return `<!DOCTYPE html>
 			<html lang="en">
@@ -171,8 +129,8 @@ class ScratchpadProvider implements vscode.WebviewViewProvider {
 				<link href="${styleUri}" rel="stylesheet">
 			</head>
 			<body>
-				<div id="scratchpadWrapper">
-					<textarea id="scratchpadArea" placeholder="Type here">${this._text}</textarea>
+				<div id="scribbleWrapper">
+					<textarea id="scribbleArea" placeholder="Type here">${this._text}</textarea>
 				</div>
 				<script src="${scriptUri}"/>
 			</body>
