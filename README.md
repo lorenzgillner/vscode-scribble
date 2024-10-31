@@ -10,7 +10,7 @@ This extension adds a (bottom) panel to the VS Code UI that mimics the functiona
 
 ## Why?
 
-Because it's a neat little feature that I've been missing in VS Code after switching over from Geany. And apparently I'm not the only one: https://github.com/Microsoft/vscode/issues/58774
+Because it's a neat little feature that I've been missing in VS Code after switching over from Geany. And apparently I'm not the only one: https://github.com/Microsoft/vscode/issues/58774.
 
 ## Commands
 
@@ -19,6 +19,7 @@ Currently, the plugin exposes the following command(s):
 Command | Description
 --- | ---
 `Save scribble` | Save scribble contents to disk
+`Copy scribble` | Copy scribble to clipboard
 
 ## Building from source
 
