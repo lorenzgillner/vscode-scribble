@@ -3,9 +3,9 @@
 	"displayName": "Scribble",
 	"description": "A Geany-like scratchpad for VS Code",
 	"icon": "./assets/icon.png",
-	"version": "0.0.11",
+	"version": "0.1.0",
 	"publisher": "lorenzgillner",
-	"preview": true,
+	"preview": false,
 	"license": "MIT",
 	"homepage": "https://github.com/lorenzgillner/vscode-scribble",
 	"repository": {
@@ -36,7 +36,9 @@
 		"note",
 		"geany"
 	],
-	"activationEvents": ["onStartupFinished"],
+	"activationEvents": [
+		"onStartupFinished"
+	],
 	"main": "./out/extension.js",
 	"capabilities": {
 		"untrustedWorkspaces": {
@@ -66,7 +68,18 @@
 			{
 				"command": "scribble.save",
 				"category": "Scribble",
-				"title": "Save scribble"
+				"title": "Save"
+			},
+			{
+				"command": "scribble.copy",
+				"category": "Scribble",
+				"title": "Copy to Clipboard"
+			}
+		],
+		"keybindings": [
+			{
+				"command": "scribble.save",
+				"key": "ctrl+alt+s"
 			}
 		]
 	},

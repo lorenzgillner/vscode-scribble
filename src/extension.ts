@@ -4,36 +4,26 @@ import * as fs from 'fs';
 /* default scribble file name */
 const scribbleName = 'scribble.txt';
 
-/* placeholder text */
-const squid = '🐙';
-
-/* encoder for writing text files */
-const enc = new TextEncoder();
-
-/* XXX When working on a remote machine, this path will be created in the local file tree! */
-function touchScribble(uri: vscode.Uri) {
-	const scribblePath = vscode.Uri.joinPath(uri, scribbleName);
-	vscode.workspace.fs.stat(uri).then(undefined, () => {
-		vscode.workspace.fs.createDirectory(uri);
+function writeFile(path: vscode.Uri, text: string) {
+	fs.writeFile(path.fsPath, Buffer.from(text), (error) => {
+		if (error) {
+			vscode.window.showErrorMessage(`Couldn't save scribble: ${error}`);
+		} else {
+			vscode.window.showInformationMessage('Scribbe saved');
+		}
 	});
-	vscode.workspace.fs.writeFile(uri, enc.encode(squid));
-	return scribblePath;
 }
 
-function readScribble(uri: vscode.Uri) {
-	return fs.readFileSync(uri.fsPath, 'utf-8');
-}
-
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 	/* default location in global extension storage (somewhere in your $HOME directory) */
 	const globalPluginDir = context.globalStorageUri;
 	const scribblePath = vscode.Uri.joinPath(globalPluginDir, scribbleName);
-	
-	/* create global scribble file if it doesn't exist yet */
-	fs.existsSync(scribblePath.fsPath) || touchScribble(globalPluginDir);
+
+	/* read file from disk, if it exists */
+	const scribbleText = fs.existsSync(scribblePath.fsPath) ? fs.readFileSync(scribblePath.fsPath).toString() : '';
 
 	/* create new scribble instance */
-	const provider = new ScribbleProvider(context.extensionUri, scribblePath);
+	const provider = new ScribbleProvider(context.extensionUri, scribblePath, scribbleText);
 
 	/* register extension and its commands */
 	context.subscriptions.push(
@@ -41,29 +31,32 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('scribble.save', () => {
-			provider.save();
+			provider.saveScribble();
+		}));
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('scribble.copy', () => {
+			provider.copyScribble();
 		}));
 }
 
 class ScribbleProvider implements vscode.WebviewViewProvider {
 	public static readonly viewType = 'scribble.scribbleView';
 
-	private _view?: vscode.WebviewView;
-	private _text: string;
+	private view!: vscode.WebviewView;
 
-	constructor(
+	public constructor(
 		private readonly _extensionUri: vscode.Uri,
-		private _scribblePath: vscode.Uri
-	) {
-		this._text = readScribble(this._scribblePath);
-	}
+		private readonly scribblePath: vscode.Uri,
+		private scribbleText: string
+	) { }
 
 	public resolveWebviewView(
 		webviewView: vscode.WebviewView,
 		_context: vscode.WebviewViewResolveContext,
 		_token: vscode.CancellationToken,
 	) {
-		this._view = webviewView;
+		this.view = webviewView;
 
 		webviewView.webview.options = {
 			enableScripts: true,
@@ -78,42 +71,32 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 			switch (event.type) {
 				case 'get':
 					{
-						this._text = event.data;
+						this.scribbleText = event.data;
 						break;
 					}
 			}
 		});
 
 		webviewView.onDidChangeVisibility(() => {
-			this.setScribble(this._text);
+			this._setScribble();
 		});
 
 		webviewView.onDidDispose(() => {
-			this.setScribble(this._text);
+			this._setScribble();
 		});
 	}
 
-	public getScribble() {
+	private _getScribble() {
 		this._callScribble('get');
 	}
 
-	public setScribble(arg: string) {
-		this._callScribble('set', arg);
-	}
-
-	public save() {
-		this._callScribble('get');
-		vscode.workspace.fs.writeFile(this._scribblePath, enc.encode(this._text)).then(() => {
-			vscode.window.showInformationMessage('Scribble saved');
-		},
-			(reason) => {
-				vscode.window.showErrorMessage(`Couldn't save scribble: ${reason}`);
-			});
+	private _setScribble() {
+		this._callScribble('set', this.scribbleText);
 	}
 
 	private _callScribble(cmd: string, arg?: string) {
-		if (this._view) {
-			this._view.webview.postMessage({ type: cmd, value: arg });
+		if (this.view) {
+			this.view.webview.postMessage({ type: cmd, value: arg });
 		}
 	}
 
@@ -121,6 +104,7 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'style.css'));
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'res', 'scribble.js'));
 
+		/* I really dislike this */
 		return `<!DOCTYPE html>
 			<html lang="en">
 			<head>
@@ -130,10 +114,21 @@ class ScribbleProvider implements vscode.WebviewViewProvider {
 			</head>
 			<body>
 				<div id="scribbleWrapper">
-					<textarea id="scribbleArea" placeholder="Type here">${this._text}</textarea>
+					<textarea id="scribbleArea" placeholder="Type here">${this.scribbleText}</textarea>
 				</div>
 				<script src="${scriptUri}"/>
 			</body>
 			</html>`;
+	}
+
+	public saveScribble() {
+		this._getScribble();
+		writeFile(this.scribblePath, this.scribbleText);
+	}
+
+	public copyScribble() {
+		this._getScribble();
+		vscode.env.clipboard.writeText(this.scribbleText);
+		vscode.window.showInformationMessage('Scribble copied to clipboard');
 	}
 }

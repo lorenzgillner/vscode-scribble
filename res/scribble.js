@@ -1,9 +1,9 @@
 (function () {
     // eslint-disable-next-line no-undef
     const vscode = acquireVsCodeApi();
-    const scribbleArea = document.getElementById('scribbleArea');
+    const $scribbleArea = document.getElementById('scribbleArea');
 
-    scribbleArea.addEventListener('input', () => {
+    $scribbleArea.addEventListener('input', () => {
         getScribbleContent();
     });
 
@@ -13,7 +13,7 @@
         switch (message.type) {
             case 'set':
                 {
-                    scribbleArea.value = message.value;
+                    $scribbleArea.value = message.value;
                     break;
                 }
             case 'get':
@@ -24,10 +24,14 @@
         }
     });
 
+    window.addEventListener('load', () => {
+        $scribbleArea.focus();
+    });
+
     function getScribbleContent() {
         vscode.postMessage({
             type: 'get',
-            data: scribbleArea.value
+            data: $scribbleArea.value
         });
     }
 }());
