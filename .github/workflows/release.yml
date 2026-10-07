@@ -15,9 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4.0.0
       - name: Node Setup
-        uses: actions/setup-node@v3.8.1
-        with:
-          node-version: '18'
+        uses: actions/setup-node@v6.5.0
       - name: Setup Environment
         run: node -e "let pkg = require('./package.json'); console.log('PACKAGE_VERSION=' + pkg.version + '\nPACKAGE_NAME=' + pkg.name + '-' + pkg.version)" >> $GITHUB_ENV
       - name: Install Dependencies
