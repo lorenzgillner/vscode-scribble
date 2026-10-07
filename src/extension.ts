@@ -1,16 +1,14 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 
 /* default scribble file name */
 const scribbleName = 'scribble.txt';
 
 function writeFile(path: vscode.Uri, text: string) {
-	fs.writeFile(path.fsPath, Buffer.from(text), (error) => {
-		if (error) {
-			vscode.window.showErrorMessage(`Couldn't save scribble: ${error}`);
-		} else {
-			vscode.window.showInformationMessage('Scribbe saved');
-		}
+	const content = new TextEncoder().encode(text);
+	vscode.workspace.fs.writeFile(path, content).then(() => {
+		vscode.window.showInformationMessage('Scribble saved');
+	}, (reason) => {
+		vscode.window.showErrorMessage(`Couldn't save scribble: ${reason.toString()}`);
 	});
 }
 
@@ -20,7 +18,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	const scribblePath = vscode.Uri.joinPath(globalPluginDir, scribbleName);
 
 	/* read file from disk, if it exists */
-	const scribbleText = fs.existsSync(scribblePath.fsPath) ? fs.readFileSync(scribblePath.fsPath).toString() : '';
+	let scribbleText = '';
+	vscode.workspace.fs.readFile(scribblePath).then((content) => {
+		scribbleText = content.toString();
+	}, null);
 
 	/* create new scribble instance */
 	const provider = new ScribbleProvider(context.extensionUri, scribblePath, scribbleText);

@@ -3,7 +3,7 @@
 	"displayName": "Scribble",
 	"description": "A Geany-like scratchpad for VS Code",
 	"icon": "./assets/icon.png",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"publisher": "lorenzgillner",
 	"preview": false,
 	"license": "MIT",
@@ -60,7 +60,8 @@
 				{
 					"type": "webview",
 					"id": "scribble.scribbleView",
-					"name": "Scribble"
+					"name": "Scribble",
+					"icon": "$(note)"
 				}
 			]
 		},
@@ -97,12 +98,9 @@
 		"@types/vscode": "^1.73.0",
 		"@typescript-eslint/eslint-plugin": "^6.7.0",
 		"@typescript-eslint/parser": "^6.7.0",
-		"@vscode/vsce": "^2.21.0",
-		"esbuild": "^0.19.3",
+		"@vscode/vsce": "^4.0.0",
+		"esbuild": "^0.28.2",
 		"eslint": "^8.32.0",
 		"typescript": "^4.9.5"
-	},
-	"dependencies": {
-		"fs": "^0.0.1-security"
 	}
 }
