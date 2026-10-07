@@ -3,7 +3,7 @@
 	"displayName": "Scribble",
 	"description": "A Geany-like scratchpad for VS Code",
 	"icon": "./assets/icon.png",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"publisher": "lorenzgillner",
 	"preview": false,
 	"license": "MIT",

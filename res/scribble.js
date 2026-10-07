@@ -26,6 +26,7 @@
 
     window.addEventListener('load', () => {
         $scribbleArea.focus();
+        $scribbleArea.setSelectionRange($scribbleArea.value.length, $scribbleArea.value.length);
     });
 
     function getScribbleContent() {

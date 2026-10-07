@@ -19,7 +19,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	/* read file from disk, if it exists */
 	let scribbleText = '';
-	vscode.workspace.fs.readFile(scribblePath).then((content) => {
+	await vscode.workspace.fs.readFile(scribblePath).then((content) => {
 		scribbleText = content.toString();
 	}, null);
 
